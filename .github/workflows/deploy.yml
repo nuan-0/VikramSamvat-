@@ -24,15 +24,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      # Using Node.js v22 and npm install to avoid Tailwind CSS v4 native binding errors
+      # Using Node.js v20 and explicit optional inclusion for Tailwind CSS native bindings
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          # removing npm cache to ensure fresh optional deps resolution
+          node-version: 20
           
       - name: Install dependencies
-        run: npm install
+        run: rm -f package-lock.json && npm install
+        
+      - name: Rebuild native extensions
+        run: npm rebuild
         
       - name: Build Project
         run: npm run build
