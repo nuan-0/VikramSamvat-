@@ -24,20 +24,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      # Using Node.js v20 and explicit optional inclusion for Tailwind CSS native bindings
+      # Using Node.js v20 and pnpm to avoid Tailwind CSS v4 native binding npm bugs
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+          
       - name: Install dependencies
-        run: rm -f package-lock.json && npm install
-        
-      - name: Rebuild native extensions
-        run: npm rebuild
+        run: pnpm install --no-frozen-lockfile
         
       - name: Build Project
-        run: npm run build
+        run: pnpm run build
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
