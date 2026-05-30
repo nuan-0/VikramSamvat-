@@ -72,12 +72,12 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
       
       const fName = f.festival.name;
 
-      if (fName.includes('दिवाली') || fName.includes('दीपावली')) {
+      if (fName.includes('दिवाली') || fName.includes('दीपावली') || fName.includes('धनतेरस')) {
         emoji = '🪔';
         if (p.sunset) {
           const pradoshStart = p.sunset as unknown as Date;
           const pradoshEnd = new Date(pradoshStart.getTime() + 144 * 60000); // 144 mins
-          specialMuhurats.push(`लक्ष्मी पूजा मुहूर्त: ${formatHPMuhuratTime(pradoshStart)} - ${formatHPMuhuratTime(pradoshEnd)} (प्रदोष काल)`);
+          specialMuhurats.push(`लक्ष्मी पूजा / प्रदोष काल मुहूर्त: ${formatHPMuhuratTime(pradoshStart)} - ${formatHPMuhuratTime(pradoshEnd)}`);
         }
       } else if (fName.includes('रक्षा बंधन')) {
         emoji = '🏵️';
@@ -86,6 +86,19 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
           rhMuhurat = `${formatHPMuhuratTime(p.bhadra.end as any)} के बाद (भद्रा समाप्ति)`;
         }
         specialMuhurats.push(`राखी बाँधने का मुहूर्त: ${rhMuhurat}`);
+      } else if (fName.includes('करवा चौथ')) {
+        emoji = '🌙';
+        if (p.moonrise) {
+          specialMuhurats.push(`चन्द्रोदय समय: ${formatHPMuhuratTime(p.moonrise as any)}`);
+        }
+      } else if (fName.includes('मकर संक्रांति')) {
+         emoji = '☀️';
+         specialMuhurats.push(`पुण्य काल: प्रातः काल से`);
+      } else if (fName.includes('नवरात्रि') || fName.includes('घटस्थापना')) {
+        emoji = '🌺';
+        if (p.abhijitMuhurta) {
+           specialMuhurats.push(`घटस्थापना / अभिजित मुहूर्त: ${formatHPMuhuratTime(p.abhijitMuhurta.start as any)} - ${formatHPMuhuratTime(p.abhijitMuhurta.end as any)}`);
+        }
       } else if (fName.includes('होलिका दहन')) {
         emoji = '🔥';
         if (p.sunset) {
@@ -176,7 +189,31 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dayDetails, setDayDetails] = useState<DayDetails | null>(null);
   
-  const [cache, setCache] = useState<Record<string, DayDetails>>({});
+  const [cache, setCache] = useState<Record<string, DayDetails>>(() => {
+    try {
+      const saved = localStorage.getItem('panchang-cache');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return {};
+  });
+  
+  // Persist cache to localStorage
+  useEffect(() => {
+    try {
+      const keys = Object.keys(cache);
+      // Limit localstorage size to 3 months (~90 days) to prevent quota issues
+      if (keys.length > 95) {
+         // Keep only the most recent month or current view
+         const trimmed: Record<string, DayDetails> = {};
+         for (let i = Math.max(0, keys.length - 35); i < keys.length; i++) {
+            trimmed[keys[i]] = cache[keys[i]];
+         }
+         localStorage.setItem('panchang-cache', JSON.stringify(trimmed));
+      } else {
+         localStorage.setItem('panchang-cache', JSON.stringify(cache));
+      }
+    } catch(e) {}
+  }, [cache]);
   const [loadingMonth, setLoadingMonth] = useState(false);
 
   const year = currentDate.getFullYear();
@@ -189,6 +226,7 @@ export default function App() {
     const keyPrefix = `${year}-${month}`;
     
     // Check if we need to load anything for this month
+    // We only use the initial cache state here to decide if we need to run
     let missing = false;
     for (let day = 1; day <= daysInMonth; day++) {
         if (!cache[`${keyPrefix}-${day}`]) {
@@ -199,33 +237,55 @@ export default function App() {
     if (!missing) return;
 
     setLoadingMonth(true);
-    let dayToCompute = 1;
     
-    const computeChunk = () => {
-      if (!active) return;
-      const endDay = Math.min(dayToCompute + 4, daysInMonth);
-      
-      setCache(prev => {
-        const newCache = { ...prev };
-        for (let d = dayToCompute; d <= endDay; d++) {
-           if (!newCache[`${keyPrefix}-${d}`]) {
-              newCache[`${keyPrefix}-${d}`] = getAccuratePanchangData(d, month, year);
-           }
-        }
-        return newCache;
-      });
+    const computeMonth = async () => {
+      // Loop through all days in month
+      for (let day = 1; day <= daysInMonth; day++) {
+          if (!active) return;
+          // Look up from local closure first, to avoid redundant calc if already done
+          // (Initial cache check doesn't update, but we do catch it inside setCache)
+          try {
+            let shouldCalculate = true;
+            setCache(c => {
+               if (c[`${keyPrefix}-${day}`]) shouldCalculate = false;
+               return c;
+            });
+            if (!shouldCalculate) continue;
 
-      dayToCompute = endDay + 1;
-      if (dayToCompute <= daysInMonth) {
-         setTimeout(computeChunk, 10);
-      } else {
+            const dayData = getAccuratePanchangData(day, month, year);
+            if (active) {
+              setCache(prev => {
+                // Double check it wasn't populated already, then add it
+                if (prev[`${keyPrefix}-${day}`]) return prev;
+                return { ...prev, [`${keyPrefix}-${day}`]: dayData };
+              });
+            }
+          } catch (e) {
+            console.error(`Error on day ${day}:`, e);
+            // Put a fallback mock data so it doesn't stay skeleton forever
+            if (active) {
+               setCache(prev => ({ 
+                 ...prev, 
+                 [`${keyPrefix}-${day}`]: {
+                    tithi: 'त्रुटि', tithiShort: '', eventShort: null, emoji: null,
+                    isHoliday: false, sunrise: '--', sunset: '--', shubh: '--', rahu: '--',
+                    events: [], specialMuhurats: []
+                 } 
+               }));
+            }
+          }
+          // Yield to main thread every day so UI isn't blocked and frames can render
+          await new Promise(r => setTimeout(r, 0));
+      }
+      if (active) {
          setLoadingMonth(false);
       }
     };
     
-    setTimeout(computeChunk, 10);
+    computeMonth();
 
     return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month, daysInMonth]);
 
   useEffect(() => {
