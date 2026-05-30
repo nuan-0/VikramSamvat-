@@ -2,7 +2,7 @@
   "name": "Vikram Samvat Calendar",
   "short_name": "Vikram Samvat",
   "description": "A modern, mobile-first Hindu Calendar application.",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#d97706",
