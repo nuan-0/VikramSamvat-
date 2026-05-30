@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { X, Loader2 } from "lucide-react";
+import * as hp from "panchang-ts";
 
 const MONTHS_HI = [
   "जनवरी",
@@ -30,280 +31,127 @@ interface DayDetails {
   shubh: string;
   rahu: string;
   events: string[];
+  specialMuhurats: string[];
 }
 
-const FESTIVALS_DATA: Record<
-  number,
-  Record<
-    number,
-    { name: string; isHoliday: boolean; emoji?: string; muhurat?: string }
-  >
-> = {
-  0: {
-    // Jan
-    9: { name: "प्रवासी भारतीय दिवस", isHoliday: false, emoji: "🌍" },
-    12: { name: "राष्ट्रीय युवा दिवस", isHoliday: false, emoji: "🇮🇳" },
-    14: {
-      name: "मकर संक्रांति",
-      isHoliday: false,
-      emoji: "🪁",
-      muhurat: "07:15 प्रातः - 05:46 सायं",
-    },
-    15: { name: "पोंगल", isHoliday: false, emoji: "🍚" },
-    26: { name: "गणतंत्र दिवस", isHoliday: true, emoji: "🇮🇳" },
-  },
-  1: {
-    // Feb
-    14: { name: "वसंत पंचमी", isHoliday: false, emoji: "🌼" },
-    15: {
-      name: "महा शिवरात्रि",
-      isHoliday: false,
-      emoji: "🔱",
-      muhurat: "12:09 रात्रि - 01:00 रात्रि (निशिता काल)",
-    },
-  },
-  2: {
-    // Mar
-    3: {
-      name: "होलिका दहन",
-      isHoliday: false,
-      emoji: "🔥",
-      muhurat: "06:26 सायं - 08:52 सायं",
-    },
-    4: { name: "होली", isHoliday: true, emoji: "🎨" },
-    25: { name: "गुड फ्राइडे", isHoliday: true, emoji: "✝️" },
-    29: { name: "महावीर जयंती", isHoliday: true, emoji: "🕉️" },
-  },
-  3: {
-    // Apr
-    2: { name: "हनुमान जयंती", isHoliday: false, emoji: "🚩" },
-    11: { name: "ईद-उल-फितर", isHoliday: true, emoji: "🌙" },
-    14: { name: "बैसाखी/अंबेडकर जयंती", isHoliday: true, emoji: "🌾" },
-    17: { name: "राम नवमी", isHoliday: true, emoji: "🏹" },
-  },
-  4: {
-    // May
-    1: { name: "मज़दूर दिवस", isHoliday: true, emoji: "🛠️" },
-    23: { name: "बुद्ध पूर्णिमा", isHoliday: true, emoji: "☸️" },
-    29: { name: "बकरीद (ईद-उल-अज़हा)", isHoliday: true, emoji: "🌙" },
-  },
-  5: {
-    // Jun
-    21: { name: "अंतर्राष्ट्रीय योग दिवस", isHoliday: false, emoji: "🧘" },
-  },
-  6: {
-    // Jul
-    17: { name: "मुहर्रम", isHoliday: true, emoji: "🕌" },
-    21: { name: "गुरु पूर्णिमा", isHoliday: false, emoji: "🌕" },
-  },
-  7: {
-    // Aug
-    15: { name: "स्वतंत्रता दिवस", isHoliday: true, emoji: "🇮🇳" },
-    19: {
-      name: "रक्षा बंधन",
-      isHoliday: false,
-      emoji: "🏵️",
-      muhurat: "01:30 दोपहर - 09:07 सायं (अपराह्न/प्रदोष)",
-    },
-    26: {
-      name: "जन्माष्टमी",
-      isHoliday: true,
-      emoji: "🦚",
-      muhurat: "12:01 रात्रि - 12:45 रात्रि (निशिता काल)",
-    },
-  },
-  8: {
-    // Sep
-    7: {
-      name: "गणेश चतुर्थी",
-      isHoliday: false,
-      emoji: "🐘",
-      muhurat: "11:03 प्रातः - 01:32 दोपहर (मध्याह्न)",
-    },
-    16: { name: "मिलाद-उन-नबी", isHoliday: true, emoji: "🕌" },
-  },
-  9: {
-    // Oct
-    2: { name: "गांधी जयंती", isHoliday: true, emoji: "🕊️" },
-    11: { name: "महानवमी", isHoliday: true, emoji: "🌺" },
-    12: {
-      name: "दशहरा",
-      isHoliday: true,
-      emoji: "🏹",
-      muhurat: "02:02 दोपहर - 02:48 दोपहर (विजय मुहूर्त)",
-    },
-    30: {
-      name: "धनतेरस",
-      isHoliday: false,
-      emoji: "🪙",
-      muhurat: "06:31 सायं - 08:13 सायं (प्रदोष काल)",
-    },
-    31: { name: "नरक चतुर्दशी", isHoliday: false, emoji: "🪔" },
-  },
-  10: {
-    // Nov
-    1: {
-      name: "दिवाली",
-      isHoliday: true,
-      emoji: "🪔",
-      muhurat: "05:58 सायं - 07:51 सायं (लक्ष्मी पूजा)",
-    },
-    2: { name: "गोवर्धन पूजा", isHoliday: true, emoji: "🐄" },
-    3: {
-      name: "भाई दूज",
-      isHoliday: false,
-      emoji: "🌺",
-      muhurat: "01:10 दोपहर - 03:22 दोपहर (अपराह्न)",
-    },
-    7: { name: "छठ पूजा", isHoliday: false, emoji: "🌅" },
-    15: { name: "गुरु नानक जयंती", isHoliday: true, emoji: "ੴ" },
-  },
-  11: {
-    // Dec
-    25: { name: "क्रिसमस", isHoliday: true, emoji: "🎄" },
-  },
+const formatHPMuhuratTime = (d: Date | null) => {
+  if (!d) return '--';
+  let h = d.getUTCHours();
+  let m = d.getUTCMinutes();
+  let ampm = h >= 12 ? 'दोपहर/सायं' : 'प्रातः';
+  if (h >= 17) ampm = 'सायं';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// ... Prokerala API Setup Warning ...
-// NOTE: We cannot safely use Prokerala API on the client side (GitHub Pages) without
-// exposing the Client ID and Secret in the browser.
-// A real Prokerala integration requires a backend to fetch the OAuth2 token securely.
-// We provide scaffolding below but fallback to our deterministic algorithm and festival dict.
-export const fetchProkeralaPanchang = async (date: Date) => {
-  // const clientId = process.env.PROKERALA_CLIENT_ID;
-  // const clientSecret = process.env.PROKERALA_CLIENT_SECRET;
-  // // 1. Get Token
-  // // 2. GET https://api.prokerala.com/v2/astrology/panchang
-  // return realApiData;
-  return null; // Force fallback to local deterministic panchang for client-side safety
-};
+const getAccuratePanchangData = (day: number, month: number, year: number): DayDetails => {
+  const date = new Date(year, month, day);
+  const location = { latitude: 28.6139, longitude: 77.2090 }; // Delhi
+  const options = { timezone: 'Asia/Kolkata', language: 'hi' as any };
 
-const getAstroDetails = (date: Date) => {
-  const dayOfWeek = date.getDay();
-  const month = date.getMonth();
+  const p = hp.getDailyPanchang(date, location, options);
+  const festivals = hp.getFestivalsInRange(date, new Date(year, month, day + 1), location, options)
+    .filter(f => f.date.getDate() === day);
 
-  // Approximate Sunrise/Sunset for Central India
-  const sunriseTimes = [
-    [7, 10],
-    [6, 50],
-    [6, 20],
-    [5, 50],
-    [5, 30],
-    [5, 25],
-    [5, 35],
-    [5, 50],
-    [6, 5],
-    [6, 20],
-    [6, 40],
-    [7, 5],
-  ];
-  const sunsetTimes = [
-    [17, 50],
-    [18, 10],
-    [18, 30],
-    [18, 45],
-    [19, 0],
-    [19, 15],
-    [19, 10],
-    [18, 50],
-    [18, 20],
-    [17, 50],
-    [17, 30],
-    [17, 30],
-  ];
+  const tithiObj = p.tithis[0];
+  const tithiShort = `${tithiObj.paksha.charAt(0)}. ${toHindiNum(tithiObj.index)}`;
+  
+  let tithiFull = `${tithiObj.paksha} पक्ष, ${tithiObj.name}`;
 
-  const sr = sunriseTimes[month];
-  const ss = sunsetTimes[month];
+  let eventShort = null;
+  let emoji = null;
+  let isHoliday = false;
+  let events: string[] = [];
+  let specialMuhurats: string[] = [];
 
-  const srDec = sr[0] + sr[1] / 60;
-  const ssDec = ss[0] + ss[1] / 60;
-  const dayLength = ssDec - srDec;
-  const partLength = dayLength / 8; // Rahu Kaal divides day into 8 parts
+  for (const f of festivals) {
+    if (f.festival.name) {
+      events.push(f.festival.name);
+      if (!eventShort) eventShort = f.festival.name;
+      
+      const fName = f.festival.name;
 
-  // Rahu Kaal parts (1-indexed): Sun(8), Mon(2), Tue(7), Wed(5), Thu(6), Fri(4), Sat(3)
-  const rahuParts = [8, 2, 7, 5, 6, 4, 3];
-  const rahuStartPart = rahuParts[dayOfWeek] - 1;
-  const rahuStart = srDec + rahuStartPart * partLength;
-  const rahuEnd = rahuStart + partLength;
+      if (fName.includes('दिवाली') || fName.includes('दीपावली')) {
+        emoji = '🪔';
+        if (p.sunset) {
+          const pradoshStart = p.sunset as unknown as Date;
+          const pradoshEnd = new Date(pradoshStart.getTime() + 144 * 60000); // 144 mins
+          specialMuhurats.push(`लक्ष्मी पूजा मुहूर्त: ${formatHPMuhuratTime(pradoshStart)} - ${formatHPMuhuratTime(pradoshEnd)} (प्रदोष काल)`);
+        }
+      } else if (fName.includes('रक्षा बंधन')) {
+        emoji = '🏵️';
+        let rhMuhurat = 'सूर्यास्त तक';
+        if (p.bhadra && p.bhadra.isActive && p.bhadra.end) {
+          rhMuhurat = `${formatHPMuhuratTime(p.bhadra.end as any)} के बाद (भद्रा समाप्ति)`;
+        }
+        specialMuhurats.push(`राखी बाँधने का मुहूर्त: ${rhMuhurat}`);
+      } else if (fName.includes('होलिका दहन')) {
+        emoji = '🔥';
+        if (p.sunset) {
+          const pStart = p.sunset as unknown as Date;
+          const pEnd = new Date(pStart.getTime() + 144 * 60000);
+          specialMuhurats.push(`होलिका दहन मुहूर्त: ${formatHPMuhuratTime(pStart)} - ${formatHPMuhuratTime(pEnd)}`);
+        }
+      } else if (fName.includes('होली')) {
+        emoji = '🎨';
+      } else if (fName.includes('शिवरात्रि')) {
+        emoji = '🔱';
+        if (p.nishitaMuhurta) {
+          specialMuhurats.push(`महा शिवरात्रि पूजा (निशिता काल): ${formatHPMuhuratTime(p.nishitaMuhurta.start as any)} - ${formatHPMuhuratTime(p.nishitaMuhurta.end as any)}`);
+        }
+      } else if (fName.includes('गणेश')) {
+        emoji = '🐘';
+        if (p.madhyahna) {
+          specialMuhurats.push(`मध्याह्न गणेश पूजा: ${formatHPMuhuratTime(p.madhyahna.start as any)} - ${formatHPMuhuratTime(p.madhyahna.end as any)}`);
+        }
+      } else if (fName.includes('कृष्ण') || fName.includes('जन्माष्टमी')) {
+        emoji = '🦚';
+        if (p.nishitaMuhurta) {
+          specialMuhurats.push(`निशिता काल पूजा: ${formatHPMuhuratTime(p.nishitaMuhurta.start as any)} - ${formatHPMuhuratTime(p.nishitaMuhurta.end as any)}`);
+        }
+      } else if (fName.includes('बुद्ध')) emoji = '☸️';
+      else if (fName.includes('राम')) emoji = '🏹';
 
-  // Abhijit Muhurat (Shubh) is usually the 8th muhurat of the day (15 muhurats in a day)
-  const muhuratLength = dayLength / 15;
-  const abhijitStart = srDec + 7 * muhuratLength;
-  const abhijitEnd = abhijitStart + muhuratLength;
+      if (f.festival.type === 'eclipse') {
+        if (!emoji) emoji = fName.includes('सूर्य') ? '🌘' : '🌕';
+      }
 
-  const formatTime = (time: number) => {
-    let h = Math.floor(time);
-    let m = Math.round((time - h) * 60);
-    if (m === 60) {
-      h += 1;
-      m = 0;
+      if (f.festival.type === 'major' || fName.includes('पूर्णिमा') || fName.includes('अमावस्या')) {
+        isHoliday = true;
+      }
     }
-
-    let period = h >= 12 ? "दोपहर/सायं" : "प्रातः";
-    if (h >= 17) period = "सायं";
-    else if (h >= 12 && h < 17) period = "दोपहर";
-
-    if (h > 12) h -= 12;
-    if (h === 0) h = 12; // 12 PM or 12 AM
-
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${period}`;
-  };
-
-  let formattedSunrise = formatTime(srDec).replace(" दोपहर", " प्रातः");
-  let formattedSunset = formatTime(ssDec);
-
-  return {
-    sunrise: formattedSunrise,
-    sunset: formattedSunset,
-    shubh:
-      dayOfWeek === 3
-        ? "बुधवार (अभिजित मुहूर्त मान्य नहीं)"
-        : `${formatTime(abhijitStart)} - ${formatTime(abhijitEnd)}`,
-    rahu: `${formatTime(rahuStart)} - ${formatTime(rahuEnd)}`,
-  };
-};
-
-const getMockDayData = (
-  day: number,
-  month: number,
-  year: number,
-): DayDetails => {
-  const paksha = day <= 15 ? "शुक्ल" : "कृष्ण";
-  const tithiNum = day <= 15 ? day : day - 15;
-  const tithiShort = `${paksha.charAt(0)}. ${toHindiNum(tithiNum)}`;
-
-  let tithiFull = "";
-  if (tithiNum === 15 && paksha === "शुक्ल") tithiFull = "पूर्णिमा";
-  else if (tithiNum === 15 && paksha === "कृष्ण") tithiFull = "अमावस्या";
-  else tithiFull = `${paksha} पक्ष, तिथि ${toHindiNum(tithiNum)}`;
-
-  const fest = FESTIVALS_DATA[month]?.[day];
-  let eventShort = fest ? fest.name : null;
-  let isHoliday = fest ? fest.isHoliday : false;
-  let emoji = fest ? fest.emoji || null : null;
-  let events = [];
-
-  if (fest) {
-    events.push(fest.name);
   }
 
-  // Tithi-based mock recurring events
-  if (tithiNum === 11) {
-    events.push("एकादशी व्रत");
-    if (!eventShort) eventShort = "एकादशी";
-  } else if (tithiNum === 15 && paksha === "कृष्ण") {
-    events.push("दर्श अमावस्या");
-    if (!eventShort) eventShort = "अमावस्या";
-  } else if (tithiNum === 15 && paksha === "शुक्ल") {
-    events.push("सत्यनारायण पूजा");
-    if (!eventShort) eventShort = "पूर्णिमा";
-  } else if (day % 13 === 0) {
-    events.push("प्रदोष व्रत (शिव पूजा)");
-    if (!eventShort) eventShort = "प्रदोष व्रत";
+  if (p.eclipse) {
+    const isSolar = p.eclipse.kind === 'solar';
+    specialMuhurats.push(`${isSolar ? 'सूर्य' : 'चंद्र'} ग्रहण: ${formatHPMuhuratTime(p.eclipse.start as any)} - ${formatHPMuhuratTime(p.eclipse.end as any)}`);
+    if (p.eclipse.sutakStart) {
+      specialMuhurats.push(`सूतक काल आरम्भ: ${formatHPMuhuratTime(p.eclipse.sutakStart as any)} से`);
+    }
   }
 
-  const astro = getAstroDetails(new Date(year, month, day));
-  const finalShubh = fest?.muhurat || astro.shubh;
+  // Tithi-based mock recurring events matching
+  if (events.length === 0) {
+     if (tithiObj.index === 11) {
+       events.push("एकादशी");
+       eventShort = "एकादशी";
+     } else if (tithiObj.index === 15 || tithiObj.index === 30) {
+       events.push(tithiObj.name);
+       eventShort = tithiObj.name;
+     }
+  }
+
+  let finalShubh = p.abhijitMuhurta 
+    ? `${formatHPMuhuratTime(p.abhijitMuhurta.start as any)} - ${formatHPMuhuratTime(p.abhijitMuhurta.end as any)}`
+    : `(अभिजित मुहूर्त नहीं)`;
+
+  if (!p.abhijitMuhurta && p.choghadiya?.day) {
+      const shubhSlot = p.choghadiya.day.find(x => x.qualityName === 'शुभ' || x.quality === 'auspicious');
+      if (shubhSlot) {
+        finalShubh = `${formatHPMuhuratTime(shubhSlot.start as any)} - ${formatHPMuhuratTime(shubhSlot.end as any)}`;
+      }
+  }
 
   return {
     tithi: tithiFull,
@@ -311,11 +159,12 @@ const getMockDayData = (
     eventShort,
     emoji,
     isHoliday,
-    sunrise: astro.sunrise,
-    sunset: astro.sunset,
+    sunrise: formatHPMuhuratTime(p.sunrise),
+    sunset: formatHPMuhuratTime(p.sunset),
     shubh: finalShubh,
-    rahu: astro.rahu,
+    rahu: `${formatHPMuhuratTime(p.rahuKalam.start as any)} - ${formatHPMuhuratTime(p.rahuKalam.end as any)}`,
     events,
+    specialMuhurats,
   };
 };
 
@@ -326,6 +175,58 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dayDetails, setDayDetails] = useState<DayDetails | null>(null);
+  
+  const [cache, setCache] = useState<Record<string, DayDetails>>({});
+  const [loadingMonth, setLoadingMonth] = useState(false);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  useEffect(() => {
+    let active = true;
+    const keyPrefix = `${year}-${month}`;
+    
+    // Check if we need to load anything for this month
+    let missing = false;
+    for (let day = 1; day <= daysInMonth; day++) {
+        if (!cache[`${keyPrefix}-${day}`]) {
+            missing = true;
+            break;
+        }
+    }
+    if (!missing) return;
+
+    setLoadingMonth(true);
+    let dayToCompute = 1;
+    
+    const computeChunk = () => {
+      if (!active) return;
+      const endDay = Math.min(dayToCompute + 4, daysInMonth);
+      
+      setCache(prev => {
+        const newCache = { ...prev };
+        for (let d = dayToCompute; d <= endDay; d++) {
+           if (!newCache[`${keyPrefix}-${d}`]) {
+              newCache[`${keyPrefix}-${d}`] = getAccuratePanchangData(d, month, year);
+           }
+        }
+        return newCache;
+      });
+
+      dayToCompute = endDay + 1;
+      if (dayToCompute <= daysInMonth) {
+         setTimeout(computeChunk, 10);
+      } else {
+         setLoadingMonth(false);
+      }
+    };
+    
+    setTimeout(computeChunk, 10);
+
+    return () => { active = false; };
+  }, [year, month, daysInMonth]);
 
   useEffect(() => {
     // Initialize Telegram Web App if available
@@ -350,37 +251,27 @@ export default function App() {
   };
 
   const handleDateClick = async (day: number) => {
-    const dateClicked = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day,
-    );
+    const dateClicked = new Date(year, month, day);
     setSelectedDate(dateClicked);
     setSheetVisible(true);
-    setLoading(true);
-    setDayDetails(null);
-
-    // Mock API Fetch (500ms delay)
-    setTimeout(() => {
-      const data = getMockDayData(
-        day,
-        currentDate.getMonth(),
-        currentDate.getFullYear(),
-      );
-      setDayDetails(data);
+    
+    const key = `${year}-${month}-${day}`;
+    if (cache[key]) {
+      setDayDetails(cache[key]);
       setLoading(false);
-    }, 500);
+    } else {
+      setLoading(true);
+      setDayDetails(null);
+      setTimeout(() => {
+        setDayDetails(getAccuratePanchangData(day, month, year));
+        setLoading(false);
+      }, 50);
+    }
   };
 
   const closeSheet = () => {
     setSheetVisible(false);
   };
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const today = new Date();
   const isToday = (d: number) =>
@@ -440,7 +331,16 @@ export default function App() {
 
             {dayCells.map((day) => {
               const currentIsToday = isToday(day);
-              const data = getMockDayData(day, month, year);
+              const data = cache[`${year}-${month}-${day}`];
+
+              if (!data) {
+                return (
+                 <div
+                   key={day}
+                   className="flex justify-center items-center w-full min-h-[84px] sm:min-h-[90px] animate-pulse bg-gray-50/50 rounded-xl"
+                 />
+                );
+              }
 
               const isSunday = new Date(year, month, day).getDay() === 0;
               const isHoliday = isSunday || data.isHoliday;
@@ -601,6 +501,21 @@ export default function App() {
                     >
                       <div className="w-3 h-3 rounded-full bg-rose-500 mr-3 sm:mr-4 shadow-sm" />
                       {event}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dayDetails.specialMuhurats.length > 0 && (
+                <div className="pt-2 space-y-3">
+                  <div className="text-gray-500 font-semibold mb-2">विशेष मुहूर्त एवं समय:</div>
+                  {dayDetails.specialMuhurats.map((muh, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center px-4 sm:px-5 py-3 sm:py-4 bg-indigo-50 text-indigo-900 rounded-2xl text-lg sm:text-xl font-medium border border-indigo-100/50"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 mr-3 shadow-sm" />
+                      {muh}
                     </div>
                   ))}
                 </div>
