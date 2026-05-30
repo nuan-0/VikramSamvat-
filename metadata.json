@@ -1,0 +1,6 @@
+{
+  "name": "Vikram Samvat",
+  "description": "A modern, mobile-first Hindu Calendar application built for Telegram and PWA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
