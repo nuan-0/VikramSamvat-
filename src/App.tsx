@@ -45,10 +45,10 @@ const FESTIVALS_DATA: Record<number, Record<number, { name: string; isHoliday: b
   },
   4: { // May
     1: { name: 'मज़दूर दिवस', isHoliday: true, emoji: '🛠️' },
-    23: { name: 'बुद्ध पूर्णिमा', isHoliday: true, emoji: '☸️' }
+    23: { name: 'बुद्ध पूर्णिमा', isHoliday: true, emoji: '☸️' },
+    29: { name: 'बकरीद (ईद-उल-अज़हा)', isHoliday: true, emoji: '🌙' }
   },
   5: { // Jun
-    17: { name: 'बकरीद', isHoliday: true, emoji: '🌙' },
     21: { name: 'अंतर्राष्ट्रीय योग दिवस', isHoliday: false, emoji: '🧘' }
   },
   6: { // Jul
@@ -327,7 +327,9 @@ export default function App() {
                       rounded-xl transition-all duration-200 active:scale-95
                       ${currentIsToday 
                         ? 'bg-amber-100/80 text-amber-900 shadow-md ring-2 ring-amber-500' 
-                        : 'text-gray-800 hover:bg-gray-50 border border-gray-100 hover:border-gray-200'
+                        : isHoliday
+                          ? 'bg-rose-50/70 hover:bg-rose-100 border border-rose-100 hover:border-rose-200'
+                          : 'text-gray-800 hover:bg-gray-50 border border-gray-100 hover:border-gray-200'
                       }
                     `}
                   >
