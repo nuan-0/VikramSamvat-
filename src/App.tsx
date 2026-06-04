@@ -48,7 +48,7 @@ const formatHPMuhuratTime = (d: Date | null) => {
 
 const getAccuratePanchangData = (day: number, month: number, year: number): DayDetails => {
   const date = new Date(year, month, day);
-  const location = { latitude: 28.6139, longitude: 77.2090 }; // Delhi
+  const location = { latitude: 25.3176, longitude: 82.9739 }; // Varanasi
   const options = { timezone: 'Asia/Kolkata', language: 'hi' as any };
 
   const p = hp.getDailyPanchang(date, location, options);
@@ -138,6 +138,26 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
         isHoliday = true;
       }
     }
+  }
+
+  // Indian National Holidays
+  if (day === 26 && month === 0) {
+    if (!events.includes("गणतंत्र दिवस (Republic Day)")) events.push("गणतंत्र दिवस (Republic Day)");
+    if (!eventShort) eventShort = "गणतंत्र दिवस";
+    emoji = "🇮🇳";
+    isHoliday = true;
+  }
+  if (day === 15 && month === 7) {
+    if (!events.includes("स्वतंत्रता दिवस (Independence Day)")) events.push("स्वतंत्रता दिवस (Independence Day)");
+    if (!eventShort) eventShort = "स्वतंत्रता दिवस";
+    emoji = "🇮🇳";
+    isHoliday = true;
+  }
+  if (day === 2 && month === 9) {
+    if (!events.includes("गांधी जयंती")) events.push("गांधी जयंती");
+    if (!eventShort) eventShort = "गांधी जयंती";
+    emoji = "🇮🇳";
+    isHoliday = true;
   }
 
   if (p.eclipse) {
