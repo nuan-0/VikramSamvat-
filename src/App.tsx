@@ -196,7 +196,7 @@ export default function App() {
   
   const [cache, setCache] = useState<Record<string, DayDetails>>(() => {
     try {
-      const saved = localStorage.getItem('panchang-cache');
+      const saved = localStorage.getItem('panchang-cache-v2');
       if (saved) return JSON.parse(saved);
     } catch(e) {}
     return {};
@@ -213,9 +213,9 @@ export default function App() {
          for (let i = Math.max(0, keys.length - 35); i < keys.length; i++) {
             trimmed[keys[i]] = cache[keys[i]];
          }
-         localStorage.setItem('panchang-cache', JSON.stringify(trimmed));
+         localStorage.setItem('panchang-cache-v2', JSON.stringify(trimmed));
       } else {
-         localStorage.setItem('panchang-cache', JSON.stringify(cache));
+         localStorage.setItem('panchang-cache-v2', JSON.stringify(cache));
       }
     } catch(e) {}
   }, [cache]);
