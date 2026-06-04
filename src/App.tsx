@@ -140,10 +140,16 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
     }
   }
 
-  // Indian National Holidays
+  // Indian National & Major Holidays
   if (day === 26 && month === 0) {
     if (!events.includes("गणतंत्र दिवस (Republic Day)")) events.push("गणतंत्र दिवस (Republic Day)");
     if (!eventShort) eventShort = "गणतंत्र दिवस";
+    emoji = "🇮🇳";
+    isHoliday = true;
+  }
+  if (day === 14 && month === 3) {
+    if (!events.includes("अम्बेडकर जयंती")) events.push("अम्बेडकर जयंती");
+    if (!eventShort) eventShort = "अम्बेडकर जयंती";
     emoji = "🇮🇳";
     isHoliday = true;
   }
@@ -216,7 +222,7 @@ export default function App() {
   
   const [cache, setCache] = useState<Record<string, DayDetails>>(() => {
     try {
-      const saved = localStorage.getItem('panchang-cache-v2');
+      const saved = localStorage.getItem('panchang-cache-v4');
       if (saved) return JSON.parse(saved);
     } catch(e) {}
     return {};
@@ -233,9 +239,9 @@ export default function App() {
          for (let i = Math.max(0, keys.length - 35); i < keys.length; i++) {
             trimmed[keys[i]] = cache[keys[i]];
          }
-         localStorage.setItem('panchang-cache-v2', JSON.stringify(trimmed));
+         localStorage.setItem('panchang-cache-v4', JSON.stringify(trimmed));
       } else {
-         localStorage.setItem('panchang-cache-v2', JSON.stringify(cache));
+         localStorage.setItem('panchang-cache-v4', JSON.stringify(cache));
       }
     } catch(e) {}
   }, [cache]);
