@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, ArrowLeft } from "lucide-react";
 import * as hp from "panchang-ts";
 
 const MONTHS_HI = [
@@ -472,22 +472,26 @@ export default function App() {
 
         {/* Bottom Sheet Backdrop */}
         <div
-          className={`absolute inset-0 z-40 bg-gray-900/60 backdrop-blur-[2px] transition-opacity duration-300 ${sheetVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          className={`fixed lg:absolute inset-0 z-40 bg-gray-900/60 backdrop-blur-[2px] transition-opacity duration-300 ${sheetVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
           onClick={closeSheet}
         />
 
         {/* Bottom Sheet Modal */}
         <div
-          className={`absolute bottom-0 left-0 right-0 z-50 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] transition-transform duration-300 ease-out transform ${sheetVisible ? "translate-y-0" : "translate-y-full"}`}
+          className={`fixed lg:absolute bottom-0 inset-x-0 mx-auto w-full max-w-[420px] z-50 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] flex flex-col max-h-[85vh] lg:max-h-[90%] transition-transform duration-300 ease-out transform ${sheetVisible ? "translate-y-0" : "translate-y-full"}`}
         >
           {/* Drag Handle */}
           <div className="w-16 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
           {/* Fixed Header */}
           <div className="flex justify-between items-start px-6 sm:px-8 mt-2 mb-4 shrink-0">
-            <div>
+            <div className="flex flex-col gap-1 items-start">
+              <button onClick={closeSheet} className="flex items-center text-amber-700 font-medium hover:text-amber-800 -ml-2 p-1.5 rounded-lg w-fit active:scale-95 transition-all lg:hidden">
+                 <ArrowLeft size={20} className="mr-1.5" />
+                 <span>वापस</span>
+              </button>
               {selectedDate && (
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 lg:mt-2">
                   {toHindiNum(selectedDate.getDate())}{" "}
                   {MONTHS_HI[selectedDate.getMonth()]}{" "}
                   {toHindiNum(selectedDate.getFullYear())}
@@ -496,7 +500,7 @@ export default function App() {
             </div>
             <button
               onClick={closeSheet}
-              className="p-2.5 rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all shrink-0 ml-4"
+              className="p-2.5 rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all shrink-0 ml-4 hidden lg:block mt-1"
             >
               <X size={28} />
             </button>
