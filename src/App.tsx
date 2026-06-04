@@ -23,6 +23,7 @@ const toHindiNum = (num: number) => new Intl.NumberFormat("hi-IN").format(num);
 interface DayDetails {
   tithi: string;
   tithiShort: string;
+  hinduMonth: string;
   eventShort: string | null;
   emoji: string | null;
   isHoliday: boolean;
@@ -57,7 +58,10 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
   const tithiObj = p.tithis[0];
   const tithiShort = `${tithiObj.paksha.charAt(0)}. ${toHindiNum(tithiObj.index)}`;
   
-  let tithiFull = `${tithiObj.paksha} पक्ष, ${tithiObj.name}`;
+  const tithiFull = `${tithiObj.paksha} पक्ष, ${tithiObj.name}`;
+  const monthName = p.chandramasa?.purnimantaName || "";
+  const isAdhika = p.chandramasa?.isAdhika ? "अधिक " : "";
+  const hinduMonth = monthName ? `${isAdhika}${monthName} मास` : "";
 
   let eventShort = null;
   let emoji = null;
@@ -169,6 +173,7 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
   return {
     tithi: tithiFull,
     tithiShort,
+    hinduMonth,
     eventShort,
     emoji,
     isHoliday,
@@ -267,7 +272,7 @@ export default function App() {
                setCache(prev => ({ 
                  ...prev, 
                  [`${keyPrefix}-${day}`]: {
-                    tithi: 'त्रुटि', tithiShort: '', eventShort: null, emoji: null,
+                    tithi: 'त्रुटि', tithiShort: '', hinduMonth: '', eventShort: null, emoji: null,
                     isHoliday: false, sunrise: '--', sunset: '--', shubh: '--', rahu: '--',
                     events: [], specialMuhurats: []
                  } 
@@ -506,10 +511,16 @@ export default function App() {
             </div>
           ) : dayDetails ? (
             <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="p-4 sm:p-5 bg-amber-50 rounded-2xl border border-amber-100/50">
-                <p className="text-xl sm:text-2xl text-amber-900 font-medium">
-                  <span className="text-amber-600/80 mr-2 sm:mr-3">तिथि:</span>
-                  {dayDetails.tithi}
+              <div className="p-4 sm:p-5 bg-amber-50 rounded-2xl border border-amber-100/50 flex flex-col gap-1.5">
+                {dayDetails.hinduMonth && (
+                  <p className="text-lg sm:text-xl text-amber-900 font-medium flex">
+                    <span className="text-amber-600/80 w-16 shrink-0 inline-block font-medium">मास:</span>
+                    <span>{dayDetails.hinduMonth}</span>
+                  </p>
+                )}
+                <p className="text-lg sm:text-xl text-amber-900 font-medium flex">
+                  <span className="text-amber-600/80 w-16 shrink-0 inline-block font-medium">तिथि:</span>
+                  <span>{dayDetails.tithi}</span>
                 </p>
               </div>
 
