@@ -478,24 +478,32 @@ export default function App() {
 
         {/* Bottom Sheet Modal */}
         <div
-          className={`absolute bottom-0 left-0 right-0 z-50 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] p-6 sm:p-8 pb-12 transition-transform duration-300 ease-out transform ${sheetVisible ? "translate-y-0" : "translate-y-full"}`}
+          className={`absolute bottom-0 left-0 right-0 z-50 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] transition-transform duration-300 ease-out transform ${sheetVisible ? "translate-y-0" : "translate-y-full"}`}
         >
-          <div className="w-16 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:mb-8" />
+          {/* Drag Handle */}
+          <div className="w-16 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
-          <button
-            onClick={closeSheet}
-            className="absolute top-6 right-6 p-2.5 rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all"
-          >
-            <X size={28} />
-          </button>
+          {/* Fixed Header */}
+          <div className="flex justify-between items-start px-6 sm:px-8 mt-2 mb-4 shrink-0">
+            <div>
+              {selectedDate && (
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">
+                  {toHindiNum(selectedDate.getDate())}{" "}
+                  {MONTHS_HI[selectedDate.getMonth()]}{" "}
+                  {toHindiNum(selectedDate.getFullYear())}
+                </h2>
+              )}
+            </div>
+            <button
+              onClick={closeSheet}
+              className="p-2.5 rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all shrink-0 ml-4"
+            >
+              <X size={28} />
+            </button>
+          </div>
 
-          {selectedDate && (
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 pt-2">
-              {toHindiNum(selectedDate.getDate())}{" "}
-              {MONTHS_HI[selectedDate.getMonth()]}{" "}
-              {toHindiNum(selectedDate.getFullYear())}
-            </h2>
-          )}
+          {/* Scrollable Content */}
+          <div className="px-6 sm:px-8 pb-12 overflow-y-auto overscroll-contain flex-1">
 
           {loading ? (
             <div className="animate-pulse space-y-6">
@@ -593,6 +601,7 @@ export default function App() {
               )}
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </div>
