@@ -76,59 +76,66 @@ const getAccuratePanchangData = (day: number, month: number, year: number): DayD
       
       const fName = f.festival.name;
 
-      if (fName.includes('दिवाली') || fName.includes('दीपावली') || fName.includes('धनतेरस')) {
+      if (fName === 'दिवाली' || fName === 'दीपावली' || fName.includes('धनतेरस')) {
         emoji = '🪔';
         if (p.sunset) {
           const pradoshStart = p.sunset as unknown as Date;
           const pradoshEnd = new Date(pradoshStart.getTime() + 144 * 60000); // 144 mins
           specialMuhurats.push(`लक्ष्मी पूजा / प्रदोष काल मुहूर्त: ${formatHPMuhuratTime(pradoshStart)} - ${formatHPMuhuratTime(pradoshEnd)}`);
         }
-      } else if (fName.includes('रक्षा बंधन')) {
+      } else if (fName === 'रक्षा बंधन' || fName === 'रक्षाबन्धन') {
         emoji = '🏵️';
         let rhMuhurat = 'सूर्यास्त तक';
         if (p.bhadra && p.bhadra.isActive && p.bhadra.end) {
           rhMuhurat = `${formatHPMuhuratTime(p.bhadra.end as any)} के बाद (भद्रा समाप्ति)`;
         }
         specialMuhurats.push(`राखी बाँधने का मुहूर्त: ${rhMuhurat}`);
-      } else if (fName.includes('करवा चौथ')) {
+      } else if (fName === 'करवा चौथ') {
         emoji = '🌙';
         if (p.moonrise) {
           specialMuhurats.push(`चन्द्रोदय समय: ${formatHPMuhuratTime(p.moonrise as any)}`);
         }
-      } else if (fName.includes('मकर संक्रांति')) {
+      } else if (fName === 'मकर संक्रांति') {
          emoji = '☀️';
          specialMuhurats.push(`पुण्य काल: प्रातः काल से`);
-      } else if (fName.includes('नवरात्रि') || fName.includes('घटस्थापना')) {
+      } else if (fName === 'नवरात्रि घटस्थापना' || fName === 'घटस्थापना') {
         emoji = '🌺';
         if (p.abhijitMuhurta) {
            specialMuhurats.push(`घटस्थापना / अभिजित मुहूर्त: ${formatHPMuhuratTime(p.abhijitMuhurta.start as any)} - ${formatHPMuhuratTime(p.abhijitMuhurta.end as any)}`);
         }
-      } else if (fName.includes('होलिका दहन')) {
+      } else if (fName === 'होलिका दहन') {
         emoji = '🔥';
         if (p.sunset) {
           const pStart = p.sunset as unknown as Date;
           const pEnd = new Date(pStart.getTime() + 144 * 60000);
           specialMuhurats.push(`होलिका दहन मुहूर्त: ${formatHPMuhuratTime(pStart)} - ${formatHPMuhuratTime(pEnd)}`);
         }
-      } else if (fName.includes('होली')) {
+      } else if (fName === 'होली' || fName.includes('धुलेंडी')) {
         emoji = '🎨';
-      } else if (fName.includes('शिवरात्रि')) {
+      } else if (fName === 'महा शिवरात्रि' || fName === 'महाशिवरात्रि') {
         emoji = '🔱';
         if (p.nishitaMuhurta) {
           specialMuhurats.push(`महा शिवरात्रि पूजा (निशिता काल): ${formatHPMuhuratTime(p.nishitaMuhurta.start as any)} - ${formatHPMuhuratTime(p.nishitaMuhurta.end as any)}`);
         }
-      } else if (fName.includes('गणेश')) {
+      } else if (fName === 'मासिक शिवरात्रि') {
+        if (!emoji) emoji = '🔱';
+      } else if (fName.includes('गणेश चतुर्थी') || fName === 'गणेशोत्सव') {
         emoji = '🐘';
         if (p.madhyahna) {
           specialMuhurats.push(`मध्याह्न गणेश पूजा: ${formatHPMuhuratTime(p.madhyahna.start as any)} - ${formatHPMuhuratTime(p.madhyahna.end as any)}`);
         }
-      } else if (fName.includes('कृष्ण') || fName.includes('जन्माष्टमी')) {
+      } else if (fName === 'श्री कृष्ण जन्माष्टमी' || fName === 'जन्माष्टमी') {
         emoji = '🦚';
         if (p.nishitaMuhurta) {
           specialMuhurats.push(`निशिता काल पूजा: ${formatHPMuhuratTime(p.nishitaMuhurta.start as any)} - ${formatHPMuhuratTime(p.nishitaMuhurta.end as any)}`);
         }
-      } else if (fName.includes('बुद्ध')) emoji = '☸️';
-      else if (fName.includes('राम')) emoji = '🏹';
+      } else if (fName === 'बुद्ध पूर्णिमा') {
+        emoji = '☸️';
+      } else if (fName === 'राम नवमी') {
+        emoji = '🏹';
+      } else if (fName.includes('एकादशी')) {
+        if (!emoji) emoji = '📿';
+      }
 
       if (f.festival.type === 'eclipse') {
         if (!emoji) emoji = fName.includes('सूर्य') ? '🌘' : '🌕';
@@ -222,7 +229,7 @@ export default function App() {
   
   const [cache, setCache] = useState<Record<string, DayDetails>>(() => {
     try {
-      const saved = localStorage.getItem('panchang-cache-v4');
+      const saved = localStorage.getItem('panchang-cache-v5');
       if (saved) return JSON.parse(saved);
     } catch(e) {}
     return {};
@@ -239,9 +246,9 @@ export default function App() {
          for (let i = Math.max(0, keys.length - 35); i < keys.length; i++) {
             trimmed[keys[i]] = cache[keys[i]];
          }
-         localStorage.setItem('panchang-cache-v4', JSON.stringify(trimmed));
+         localStorage.setItem('panchang-cache-v5', JSON.stringify(trimmed));
       } else {
-         localStorage.setItem('panchang-cache-v4', JSON.stringify(cache));
+         localStorage.setItem('panchang-cache-v5', JSON.stringify(cache));
       }
     } catch(e) {}
   }, [cache]);
